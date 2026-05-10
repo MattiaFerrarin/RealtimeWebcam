@@ -1,4 +1,5 @@
 import cv2
+import datetime
 import mediapipe as mp
 from scripts import filters
 from scripts import effects
@@ -110,14 +111,14 @@ if __name__ == "__main__":
             if key == ord("q") or key == ord("Q") or key == 27:
                 running = False
 
-            elif key == ord("w") or key == ord("W"):
+            elif key == ord("e") or key == ord("E"):
                 filterName = state.scroll("filters",1)
-            elif key == ord("s") or key == ord("S"):
+            elif key == ord("d") or key == ord("D"):
                 filterName = state.scroll("filters",-1)
 
-            elif key == ord("a") or key == ord("A"):
+            elif key == ord("r") or key == ord("R"):
                 effectName = state.scroll("effects",-1)
-            elif key == ord("d") or key == ord("D"):
+            elif key == ord("f") or key == ord("F"):
                 effectName = state.scroll("effects",1)
 
             faces = detectFaces(frame, faceDetector)
@@ -126,7 +127,8 @@ if __name__ == "__main__":
             frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None))
 
             if key == ord("s") or key == ord("S"):
-                cv2.imwrite(f"img_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{}.jpg", frame)
+                cv2.imwrite(f"img_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg", frame)
+                # Make it so a visual cue appears
 
             # UI and HUD
             frame = ui.draw(
