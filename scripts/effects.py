@@ -13,7 +13,7 @@ def blur_background(frame_bgr, face):
         mask = cv2.GaussianBlur(mask, (51, 51), 0)
         mask = cv2.merge([mask, mask, mask])
 
-        frame_bgr = (frame_bgr * mask + blurred * (1 - mask)).astype(np.uint8)
+        frame_bgr = (frame_bgr.astype(np.float32) * mask + blurred.astype(np.float32) * (1 - mask)).astype(np.uint8)
     else:
         frame_bgr = blurred
     return frame_bgr
