@@ -160,7 +160,7 @@ if __name__ == "__main__":
         # Recording
         recording = False
         writer = None
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'H264')
         record_fps = 30  # fixed output FPS
 
         while running:
