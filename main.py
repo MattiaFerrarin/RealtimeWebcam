@@ -1,14 +1,107 @@
 import os
+import sys
+import math
 from pathlib import Path
 import cv2
 import numpy as np
 import time
 import datetime
 import mediapipe as mp
+from fontTools.misc.cython import returns
+
 from scripts import filters
 from scripts import effects
 from scripts.ui import UI
 
+
+# -- Camera selection --
+def make_grid(frames, grid_shape=None, cell_size=(320, 240)):
+    n = len(frames)
+    if n == 0:
+        return None
+    if grid_shape is None:
+        cols = math.ceil(math.sqrt(n))
+        rows = math.ceil(n / cols)
+    else:
+        cols, rows = grid_shape
+    w, h = cell_size
+    grid = np.zeros((rows * h, cols * w, 3), dtype=np.uint8)
+
+    for i, (idx, frame) in enumerate(frames):
+        if frame is None:
+            continue
+        frame = cv2.resize(frame, (w, h))
+        cv2.rectangle(frame,(0, 0),(w - 1, h - 1),(255, 255, 255),3)
+        cv2.putText(frame, f"Cam {idx}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+        row = i // cols
+        col = i % cols
+        y1 = row * h
+        y2 = y1 + h
+        x1 = col * w
+        x2 = x1 + w
+
+        grid[y1:y2, x1:x2] = frame
+
+    return grid
+
+def find_available_cameras(max_index=10):
+    available = []
+    for i in range(max_index):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            ret, frame = cap.read()
+            if ret and frame is not None:
+                available.append(i)
+        cap.release()
+    return available
+
+def select_camera():
+    cameras = find_available_cameras()
+    if not cameras:
+        raise RuntimeError("No cameras found")
+    if len(cameras) == 1:
+        print(f"[CAM] Only one camera found: {cameras[0]}")
+        return cv2.VideoCapture(cameras[0])
+
+    print(f"[CAM] Multiple cameras found: {cameras}")
+    print("Press number key to select camera, Q to quit")
+    caps = {i: cv2.VideoCapture(i) for i in cameras}
+    selected = cameras[0]
+    while True:
+        frames = []
+        for idx in cameras:
+            cap = caps[idx]
+            ret, frame = cap.read()
+            if not ret:
+                frame = np.zeros((240, 320, 3), dtype=np.uint8)
+                cv2.putText(frame, "NO SIGNAL", (50, 120),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+            frames.append((idx, frame))
+        grid = make_grid(frames)
+        cv2.imshow("Camera Selection", grid)
+        key = cv2.waitKey(1) & 0xFF
+        # number selection
+        if ord('0') <= key <= ord('9'):
+            cam_id = int(chr(key))
+            if cam_id in cameras:
+                selected = cam_id
+                break
+        if key == ord('q') or key == ord("Q") or key == 27:
+            selected = None
+            break
+    # cleanup
+    for cap in caps.values():
+        cap.release()
+    cv2.destroyAllWindows()
+    if selected is None:
+        return None
+    print(f"[CAM] Selected camera: {selected}")
+    return cv2.VideoCapture(selected)
+# -- End of Camera Selection --
+
+# -- Helper classes --
 class StateHandler:
     def __init__(self, filters, effects):
         self.filters = filters
@@ -79,8 +172,9 @@ class FaceHandler:
 
         self.prev = (sx, sy, sw, sh)
         return (sx, sy, sw, sh)
+# -- End of Helper Classes --
 
-
+# -- Helper functions --
 def applyFilter(filter, frame):
     if filter is None:
         return frame
@@ -131,6 +225,7 @@ def applyEffect(effect, frame, face):
         return effects.glasses(frame, face)
     else:
         return frame
+# -- End of Helper functions --
 
 
 if __name__ == "__main__":
@@ -142,7 +237,9 @@ if __name__ == "__main__":
 
     faceDetector = mp.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.6)
 
-    cap = cv2.VideoCapture(0)
+    cap = select_camera()
+    if cap is None:
+        sys.exit(0)
     ui = UI()
     state = StateHandler(filtersList, effectsList)
     face_handler = FaceHandler(alpha=0.7)
