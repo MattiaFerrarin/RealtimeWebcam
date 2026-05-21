@@ -33,6 +33,53 @@ class StateHandler:
     def flip(self):
         self.flipped = not self.flipped
 
+class FaceHandler:
+    def __init__(self, alpha=0.7):
+        self.alpha = alpha
+        self.prev = None
+
+    def detectFaces(self, frame, detector):
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb.flags.writeable = False
+        results = detector.process(rgb)
+        rgb.flags.writeable = True
+        faces = []
+        if results.detections:
+            h, w, _ = frame.shape
+            for detection in results.detections:
+                bbox = detection.location_data.relative_bounding_box
+                x = int(bbox.xmin * w)
+                y = int(bbox.ymin * h)
+                bw = int(bbox.width * w)
+                bh = int(bbox.height * h)
+                x = max(0, x)
+                y = max(0, y)
+                bw = min(w - x, bw)
+                bh = min(h - y, bh)
+                faces.append((x, y, bw, bh))
+        return faces
+
+    def smooth(self, face):
+        if face is None:
+            self.prev = None
+            return None
+
+        x, y, w, h = face
+
+        if self.prev is None:
+            self.prev = (x, y, w, h)
+            return face
+
+        px, py, pw, ph = self.prev
+
+        sx = int(self.alpha * px + (1 - self.alpha) * x)
+        sy = int(self.alpha * py + (1 - self.alpha) * y)
+        sw = int(self.alpha * pw + (1 - self.alpha) * w)
+        sh = int(self.alpha * ph + (1 - self.alpha) * h)
+
+        self.prev = (sx, sy, sw, sh)
+        return (sx, sy, sw, sh)
+
 
 def applyFilter(filter, frame):
     if filter is None:
@@ -84,26 +131,6 @@ def applyEffect(effect, frame, face):
         return effects.glasses(frame, face)
     else:
         return frame
-def detectFaces(frame, detector):
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    rgb.flags.writeable = False
-    results = detector.process(rgb)
-    rgb.flags.writeable = True
-    faces = []
-    if results.detections:
-        h, w, _ = frame.shape
-        for detection in results.detections:
-            bbox = detection.location_data.relative_bounding_box
-            x = int(bbox.xmin * w)
-            y = int(bbox.ymin * h)
-            bw = int(bbox.width * w)
-            bh = int(bbox.height * h)
-            x = max(0, x)
-            y = max(0, y)
-            bw = min(w - x, bw)
-            bh = min(h - y, bh)
-            faces.append((x, y, bw, bh))
-    return faces
 
 
 if __name__ == "__main__":
@@ -124,7 +151,8 @@ if __name__ == "__main__":
         effectName = None
         prev_time = time.time()
         fps_avg = 0
-        alpha = 0.1
+        fps_alpha = 0.1
+        face_handler = FaceHandler(alpha=0.7)
         while running:
             ret, frame = cap.read()
             if not ret:
@@ -151,7 +179,9 @@ if __name__ == "__main__":
             elif key == ord("v") or key == ord("V"):
                 effectName = state.scroll("effects",1)
 
-            faces = detectFaces(frame, faceDetector)
+            faces = face_handler.detectFaces(frame, faceDetector)
+            face = max(faces, key=lambda f: f[2] * f[3], default=None)
+            face = face_handler.smooth(face)
 
             frame = applyFilter(filterName, frame)
             frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None))
@@ -191,7 +221,7 @@ if __name__ == "__main__":
             curr_time = time.time()
             instant_fps = 1 / (curr_time - prev_time)
             prev_time = curr_time
-            fps_avg = (1 - alpha) * fps_avg + alpha * instant_fps
+            fps_avg = (1 - fps_alpha) * fps_avg + fps_alpha * instant_fps
 
             # UI and HUD
             frame = ui.draw(
