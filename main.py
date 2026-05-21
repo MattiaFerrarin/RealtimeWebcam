@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 import time
@@ -149,7 +150,8 @@ if __name__ == "__main__":
                 frame = cv2.flip(frame, 1)
 
             if key == ord("s") or key == ord("S"):
-                cv2.imwrite(f"img_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg", frame)
+                os.makedirs("screenshots", exist_ok=True)
+                cv2.imwrite(f"screenshots/img_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg", frame)
                 # Creates the screenshot animation
                 frozen = frame.copy()
                 h, w = frozen.shape[:2]
