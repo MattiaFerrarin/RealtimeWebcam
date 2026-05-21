@@ -134,6 +134,7 @@ def applyEffect(effect, frame, face):
 
 
 if __name__ == "__main__":
+    PROGRAM_NAME = "RealtimeWebcam"
 
     filtersList = (None, "grayscale", "negative", "sepia", "bone", "solarize", "thermal", "spring", "summer",
                    "autumn", "winter", "hot", "cool", "cartoon", "pixelate", "vignette")
@@ -200,9 +201,8 @@ if __name__ == "__main__":
 
             if key == ord("s") or key == ord("S"):
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                os.makedirs("screenshots", exist_ok=True)
                 home = Path.home()
-                candidate_dirs = [home / "Pictures", home / "Downloads", Path.cwd() / "screenshots"]
+                candidate_dirs = [home / "Pictures" / PROGRAM_NAME, home / "Downloads" / PROGRAM_NAME, Path.cwd() / "screenshots"]
                 for directory in candidate_dirs:
                     try:
                         directory.mkdir(parents=True, exist_ok=True)
@@ -230,9 +230,9 @@ if __name__ == "__main__":
             elif key == ord("r") or key == ord("R"):
                 recording = not recording
                 if recording:
-                    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     home = Path.home()
-                    candidate_dirs = [home / "Videos", home / "Downloads", Path.cwd() / "recordings"]
+                    candidate_dirs = [home / "Videos" / PROGRAM_NAME, home / "Downloads" / PROGRAM_NAME, Path.cwd() / "recordings"]
                     writer = None
                     filename = None
 
