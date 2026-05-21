@@ -3,11 +3,12 @@ import numpy as np
 import cv2
 
 # Load globally to prevent multiple loading of the same assets
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 hat_png = cv2.imread(str(BASE_DIR / "assets/pink_hat.png"), cv2.IMREAD_UNCHANGED)
 hacker_png = cv2.imread(str(BASE_DIR / "assets/hacker.png"), cv2.IMREAD_UNCHANGED)
 beard_png = cv2.imread(str(BASE_DIR / "assets/beard.png"), cv2.IMREAD_UNCHANGED)
 glasses_png = cv2.imread(str(BASE_DIR / "assets/glasses.png"), cv2.IMREAD_UNCHANGED)
+
 
 def blur_background(frame_bgr, face):
     blurred = cv2.GaussianBlur(frame_bgr, (51, 51), 0)
