@@ -144,15 +144,25 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(0)
     ui = UI()
     state = StateHandler(filtersList, effectsList)
+    face_handler = FaceHandler(alpha=0.7)
     running = True
 
     try:
+        # Create window
+        cv2.namedWindow("Webcam", cv2.WINDOW_AUTOSIZE)
+        # Active effect and filter
         filterName = None
         effectName = None
+        # FPS
         prev_time = time.time()
         fps_avg = 0
         fps_alpha = 0.1
-        face_handler = FaceHandler(alpha=0.7)
+        # Recording
+        recording = False
+        writer = None
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        record_fps = 30  # fixed output FPS
+
         while running:
             ret, frame = cap.read()
             if not ret:
@@ -183,8 +193,8 @@ if __name__ == "__main__":
             face = max(faces, key=lambda f: f[2] * f[3], default=None)
             face = face_handler.smooth(face)
 
-            frame = applyFilter(filterName, frame)
             frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None))
+            frame = applyFilter(filterName, frame)
             if state.flipped:
                 frame = cv2.flip(frame, 1)
 
@@ -217,6 +227,46 @@ if __name__ == "__main__":
                     cv2.imshow("Webcam", temp)
                     cv2.waitKey(20)
 
+            elif key == ord("r") or key == ord("R"):
+                recording = not recording
+                if recording:
+                    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                    home = Path.home()
+                    candidate_dirs = [home / "Videos", home / "Downloads", Path.cwd() / "recordings"]
+                    writer = None
+                    filename = None
+
+                    for directory in candidate_dirs:
+                        try:
+                            directory.mkdir(parents=True, exist_ok=True)
+                            filename = directory / f"video_{timestamp}.mp4"
+                            h, w = frame.shape[:2]
+                            writer = cv2.VideoWriter(str(filename), fourcc, record_fps, (w, h))
+
+                            if writer.isOpened():
+                                print(f"[REC] Started recording: {filename}")
+                                break
+                            else:
+                                writer.release()
+                                writer = None
+
+                        except Exception as e:
+                            print(f"[REC] Failed directory {directory}, trying next...")
+
+                    if writer is None:
+                        print("[REC] ERROR: No valid path found for video recording")
+                        recording = False
+
+                else:
+                    if writer is not None:
+                        writer.release()
+                        writer = None
+                        print("[REC] Stopped recording")
+
+            # If recording write frame
+            if recording and writer is not None:
+                writer.write(frame)
+
             # Calculate averaged FPS
             curr_time = time.time()
             instant_fps = 1 / (curr_time - prev_time)
@@ -230,13 +280,15 @@ if __name__ == "__main__":
                 effect_name=effectName,
                 face_count=len(faces),
                 fps=round(fps_avg, 1),
-                flipped=state.flipped
+                flipped=state.flipped,
+                recording=recording
             )
 
             cv2.imshow("Webcam", frame)
     except Exception as e:
         print(f"Exception captured:\n{e}")
     finally:
+        if writer is not None:
+            writer.release()
         cap.release()
         cv2.destroyAllWindows()
-

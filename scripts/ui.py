@@ -6,7 +6,7 @@ class UI:
     def __init__(self):
         pass
 
-    def draw(self, frame, filter_name = None, effect_name = None, face_count = None, fps = None, flipped=False):
+    def draw(self, frame, filter_name = None, effect_name = None, face_count = None, fps = None, flipped=False, recording=False):
         frame = frame.copy()
 
         if filter_name is not None:
@@ -31,7 +31,11 @@ class UI:
         if flipped:
             (text_width, text_height), baseline = cv2.getTextSize("Flipped",cv2.FONT_HERSHEY_SIMPLEX,0.7,2)
             x = frame.shape[1] - text_width - 10
-            y = 30
+            y = 80
             cv2.putText(frame,"Flipped",(x, y),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0, 255, 255),2)
+
+        if recording:
+            cv2.circle(frame, (frame.shape[1] - 80, 30), 10, (0, 0, 255), -1)
+            cv2.putText(frame, "REC", (frame.shape[1] - 60, 37), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
         return frame
