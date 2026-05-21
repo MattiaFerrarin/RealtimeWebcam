@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import cv2
 import numpy as np
 import time
@@ -73,6 +74,14 @@ def applyEffect(effect, frame, face):
         return frame
     elif effect == "blur back":
         return effects.blur_background(frame, face)
+    elif effect == "pink hat":
+        return effects.pink_hat(frame, face)
+    elif effect == "hacker":
+        return effects.hacker(frame, face)
+    elif effect == "beard":
+        return effects.beard(frame, face)
+    elif effect == "glasses":
+        return effects.glasses(frame, face)
     else:
         return frame
 def detectFaces(frame, detector):
@@ -101,7 +110,7 @@ if __name__ == "__main__":
 
     filtersList = (None, "grayscale", "negative", "sepia", "bone", "solarize", "thermal", "spring", "summer",
                    "autumn", "winter", "hot", "cool", "cartoon", "pixelate", "vignette")
-    effectsList = (None, "blur back")
+    effectsList = (None, "blur back", "pink hat", "hacker", "beard", "glasses")
 
     faceDetector = mp.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.6)
 
@@ -150,8 +159,19 @@ if __name__ == "__main__":
                 frame = cv2.flip(frame, 1)
 
             if key == ord("s") or key == ord("S"):
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                 os.makedirs("screenshots", exist_ok=True)
-                cv2.imwrite(f"screenshots/img_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg", frame)
+                home = Path.home()
+                candidate_dirs = [home / "Pictures", home / "Downloads", Path.cwd() / "screenshots"]
+                for directory in candidate_dirs:
+                    try:
+                        directory.mkdir(parents=True, exist_ok=True)
+                        file_path = directory / f"img_{timestamp}.jpg"
+                        if cv2.imwrite(str(file_path), frame):
+                            break
+                    except Exception as e:
+                        print(f"Error occurred while saving screenshot: no viable path found for directory: {directory}, falling back to next choice")
+
                 # Creates the screenshot animation
                 frozen = frame.copy()
                 h, w = frozen.shape[:2]
