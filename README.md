@@ -4,6 +4,9 @@
 Made by _Mattia Ferrarin_.
 
 ---
+## Getting started
+To get started follow the relative page in the [Wiki](../../wiki/Getting-started)!
+
 ## Features
 - Filters (grayscale, negative, sepia, bone, solarize, thermal, spring, summer, autumn, winter, hot, cool, cartoon, pixelate, vignette)
 - Effects (blur back, pink hat, hacker, beard, glasses)
@@ -13,4 +16,4 @@ Made by _Mattia Ferrarin_.
 - Select Webcam on startup
 
 ## Documentation
-You can find all the documentation in the Wiki
+You can find all the documentation in the [Wiki](../../wiki)!
