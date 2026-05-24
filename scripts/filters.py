@@ -2,14 +2,17 @@ import numpy as np
 import cv2
 
 
+# Converts the image to grayscale while keeping 3 color channels (BGR format)
 def grayscale(frame_bgr):
     return cv2.cvtColor(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
 
 
+# Inverts all pixel colors to create a negative image effect
 def negative(frame_bgr):
     return cv2.bitwise_not(frame_bgr.copy())
 
 
+# Applies a sepia-tone filter
 def sepia(frame_bgr):
     sepia = np.array([[0.27, 0.53, 0.13],
                       [0.38, 0.72, 0.20],
@@ -17,42 +20,52 @@ def sepia(frame_bgr):
     return cv2.cvtColor(cv2.transform(cv2.cvtColor(frame_bgr.copy(),cv2.COLOR_BGR2RGB), sepia), cv2.COLOR_RGB2BGR)
 
 
+# Solarizes the image by inverting pixels above a brightness threshold
 def solarize(frame_bgr, threshold=128):
     return np.where(frame_bgr < threshold, frame_bgr.copy(), 255 - frame_bgr)
 
 
+# Applies a thermal heatmap-style color effect using the JET colormap
 def thermal(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_JET)
 
 
+# Applies the SPRING colormap for pink tones
 def spring(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_SPRING)
 
 
+# Applies the SUMMER colormap for green tones
 def summer(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_SUMMER)
 
 
+# Applies the AUTUMN colormap for orange tones
 def autumn(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_AUTUMN)
 
 
+# Applies the WINTER colormap for blue tones
 def winter(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_WINTER)
 
 
+# Applies the HOT colormap
 def hot(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_HOT)
 
 
+# Applies the COOL colormap
 def cool(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_COOL)
 
 
+# Applies the BONE colormap
 def bone(frame_bgr):
     return cv2.applyColorMap(cv2.cvtColor(frame_bgr.copy(), cv2.COLOR_BGR2GRAY), cv2.COLORMAP_BONE)
 
 
+# Creates a cartoon effect by smoothing colors and emphasizing edges
 def cartoon(frame_bgr):
     color = frame_bgr.copy()
     for i in range(3):
@@ -67,6 +80,7 @@ def cartoon(frame_bgr):
     return cv2.bitwise_and(color, edges)
 
 
+# Pixelates the image by shrinking and enlarging it with nearest-neighbor scaling
 def pixelate(frame_bgr, pixel_size=10):
     h, w = frame_bgr.shape[:2]
     small_w = max(1, w // pixel_size)
@@ -76,6 +90,7 @@ def pixelate(frame_bgr, pixel_size=10):
     return pixelated
 
 
+# Applies a vignette effect that darkens the image toward the edges
 def vignette(frame_bgr, strength=0.6):
     h, w = frame_bgr.shape[:2]
     kernel_x = cv2.getGaussianKernel(w, w * strength)

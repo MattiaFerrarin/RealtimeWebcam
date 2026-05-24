@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 
-# Load globally to prevent multiple loading of the same assets
+# Load asset images once globally to avoid repeatedly reading them from disk.
 BASE_DIR = Path(__file__).resolve().parent.parent
 hat_png = cv2.imread(str(BASE_DIR / "assets/pink_hat.png"), cv2.IMREAD_UNCHANGED)
 hacker_png = cv2.imread(str(BASE_DIR / "assets/hacker.png"), cv2.IMREAD_UNCHANGED)
@@ -10,6 +10,7 @@ beard_png = cv2.imread(str(BASE_DIR / "assets/beard.png"), cv2.IMREAD_UNCHANGED)
 glasses_png = cv2.imread(str(BASE_DIR / "assets/glasses.png"), cv2.IMREAD_UNCHANGED)
 
 
+# Blurs the background while keeping the detected face area in focus
 def blur_background(frame_bgr, face):
     blurred = cv2.GaussianBlur(frame_bgr, (51, 51), 0)
     if face is not None:
@@ -28,6 +29,7 @@ def blur_background(frame_bgr, face):
     return frame_bgr
 
 
+# Overlays an image onto a frame with alpha blending and boundary checking
 def overlay_image(frame, img, x, y, width, height):
     frame_h, frame_w = frame.shape[:2]
 
@@ -58,6 +60,7 @@ def overlay_image(frame, img, x, y, width, height):
     return frame
 
 
+# Places a pink hat image above the detected face
 def pink_hat(frame_bgr, face):
     frame_bgr = frame_bgr.copy()
     img = hat_png
@@ -75,6 +78,8 @@ def pink_hat(frame_bgr, face):
 
     return overlay_image(frame_bgr, img, item_x, item_y, item_width, item_height)
 
+
+# Places a hacker overlay around the detected face
 def hacker(frame_bgr, face):
     frame_bgr = frame_bgr.copy()
     img = hacker_png
@@ -92,6 +97,8 @@ def hacker(frame_bgr, face):
 
     return overlay_image(frame_bgr, img, item_x, item_y, item_width, item_height)
 
+
+# Adds a beard overlay aligned to the lower part of the detected face
 def beard(frame_bgr, face):
     frame_bgr = frame_bgr.copy()
     img = beard_png
@@ -109,6 +116,8 @@ def beard(frame_bgr, face):
 
     return overlay_image(frame_bgr, img, item_x, item_y, item_width, item_height)
 
+
+# Adds glasses overlay positioned over the eyes
 def glasses(frame_bgr, face):
     frame_bgr = frame_bgr.copy()
     img = glasses_png

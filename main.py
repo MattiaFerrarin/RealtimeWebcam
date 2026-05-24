@@ -15,6 +15,7 @@ from scripts.ui import UI
 
 
 # -- Camera selection --
+# Makes the grid for the camera frames and returns the final image
 def make_grid(frames, grid_shape=None, cell_size=(320, 240)):
     n = len(frames)
     if n == 0:
@@ -45,6 +46,7 @@ def make_grid(frames, grid_shape=None, cell_size=(320, 240)):
 
     return grid
 
+# Finds all available cameras up to an index
 def find_available_cameras(max_index=10):
     available = []
     for i in range(max_index):
@@ -56,19 +58,17 @@ def find_available_cameras(max_index=10):
         cap.release()
     return available
 
+# Starts the camera selection screen
 def select_camera():
     cameras = find_available_cameras()
     if not cameras:
-        raise RuntimeError("No cameras found")
-    if len(cameras) == 1:
-        print(f"[CAM] Only one camera found: {cameras[0]}")
+        raise RuntimeError("No cameras found") # Terminates program
+    if len(cameras) == 1: # Only one camera found, skips selection screen
         return cv2.VideoCapture(cameras[0])
 
-    print(f"[CAM] Multiple cameras found: {cameras}")
-    print("Press number key to select camera, Q to quit")
     caps = {i: cv2.VideoCapture(i) for i in cameras}
     selected = cameras[0]
-    while True:
+    while True: # Starts the loop to select the camera
         frames = []
         for idx in cameras:
             cap = caps[idx]
@@ -88,7 +88,7 @@ def select_camera():
             if cam_id in cameras:
                 selected = cam_id
                 break
-        if key == ord('q') or key == ord("Q") or key == 27:
+        if key == ord('q') or key == ord("Q") or key == 27: # q or ESC to close the program
             selected = None
             break
     # cleanup
@@ -97,12 +97,11 @@ def select_camera():
     cv2.destroyAllWindows()
     if selected is None:
         return None
-    print(f"[CAM] Selected camera: {selected}")
     return cv2.VideoCapture(selected)
 # -- End of Camera Selection --
 
 # -- Helper classes --
-class StateHandler:
+class StateHandler: # Handles the state of selected effects, filters and flip
     def __init__(self, filters, effects):
         self.filters = filters
         self.effects = effects
@@ -126,12 +125,12 @@ class StateHandler:
     def flip(self):
         self.flipped = not self.flipped
 
-class FaceHandler:
+class FaceHandler: # Handles mediapipe face detection
     def __init__(self, alpha=0.7):
         self.alpha = alpha
         self.prev = None
 
-    def detectFaces(self, frame, detector):
+    def detectFaces(self, frame, detector): # Returns detected faces
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         rgb.flags.writeable = False
         results = detector.process(rgb)
@@ -152,7 +151,7 @@ class FaceHandler:
                 faces.append((x, y, bw, bh))
         return faces
 
-    def smooth(self, face):
+    def smooth(self, face): # Smooths the face detection based on the previous face
         if face is None:
             self.prev = None
             return None
@@ -175,7 +174,7 @@ class FaceHandler:
 # -- End of Helper Classes --
 
 # -- Helper functions --
-def applyFilter(filter, frame):
+def applyFilter(filter, frame): # Based on the filter name calls the appropriate function
     if filter is None:
         return frame
     elif filter == "grayscale":
@@ -210,7 +209,7 @@ def applyFilter(filter, frame):
         return filters.vignette(frame)
     else:
         return frame
-def applyEffect(effect, frame, face):
+def applyEffect(effect, frame, face): # Based on the effect name calls the appropriate function
     if effect is None:
         return frame
     elif effect == "blur back":
@@ -237,7 +236,7 @@ if __name__ == "__main__":
 
     faceDetector = mp.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.6)
 
-    cap = select_camera()
+    cap = select_camera() # Camera selection screen
     if cap is None:
         sys.exit(0)
     ui = UI()
@@ -271,33 +270,34 @@ if __name__ == "__main__":
             # input
             key = cv2.waitKey(1) & 0xFF
 
-            if key == ord("q") or key == ord("Q") or key == 27:
+            if key == ord("q") or key == ord("Q") or key == 27: # Closing program with q or ESC
                 running = False
 
-            elif key == ord("f") or key == ord("F"):
+            elif key == ord("f") or key == ord("F"): # Flipping frame
                 state.flip()
 
-            elif key == ord("z") or key == ord("Z"):
+            elif key == ord("z") or key == ord("Z"): # Scroll filters back
                 filterName = state.scroll("filters",-1)
-            elif key == ord("x") or key == ord("X"):
+            elif key == ord("x") or key == ord("X"): # Scroll filters forward
                 filterName = state.scroll("filters",1)
 
-            elif key == ord("c") or key == ord("C"):
+            elif key == ord("c") or key == ord("C"): # Scroll effects back
                 effectName = state.scroll("effects",-1)
-            elif key == ord("v") or key == ord("V"):
+            elif key == ord("v") or key == ord("V"): # Scroll effects forward
                 effectName = state.scroll("effects",1)
 
-            faces = face_handler.detectFaces(frame, faceDetector)
-            face = max(faces, key=lambda f: f[2] * f[3], default=None)
-            face = face_handler.smooth(face)
+            faces = face_handler.detectFaces(frame, faceDetector) # Detects faces
+            face = max(faces, key=lambda f: f[2] * f[3], default=None) # Selects the main face
+            face = face_handler.smooth(face) # Smooths the main face
 
-            frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None))
-            frame = applyFilter(filterName, frame)
-            if state.flipped:
+            frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None)) # Applies effect
+            frame = applyFilter(filterName, frame) # Applies filter
+            if state.flipped: # If flipped, flip the frame
                 frame = cv2.flip(frame, 1)
 
-            if key == ord("s") or key == ord("S"):
+            if key == ord("s") or key == ord("S"): # Save screenshot
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                # Tries to save in order of priority in the folders
                 home = Path.home()
                 candidate_dirs = [home / "Pictures" / PROGRAM_NAME, home / "Downloads" / PROGRAM_NAME, Path.cwd() / "screenshots"]
                 for directory in candidate_dirs:
@@ -324,10 +324,11 @@ if __name__ == "__main__":
                     cv2.imshow("Webcam", temp)
                     cv2.waitKey(20)
 
-            elif key == ord("r") or key == ord("R"):
+            elif key == ord("r") or key == ord("R"): # Start or stop recording
                 recording = not recording
                 if recording:
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    # Tries to save in order of priority in the folders
                     home = Path.home()
                     candidate_dirs = [home / "Videos" / PROGRAM_NAME, home / "Downloads" / PROGRAM_NAME, Path.cwd() / "recordings"]
                     writer = None
@@ -341,7 +342,6 @@ if __name__ == "__main__":
                             writer = cv2.VideoWriter(str(filename), fourcc, record_fps, (w, h))
 
                             if writer.isOpened():
-                                print(f"[REC] Started recording: {filename}")
                                 break
                             else:
                                 writer.release()
@@ -355,10 +355,9 @@ if __name__ == "__main__":
                         recording = False
 
                 else:
-                    if writer is not None:
+                    if writer is not None: # Stops recording
                         writer.release()
                         writer = None
-                        print("[REC] Stopped recording")
 
             # If recording write frame
             if recording and writer is not None:
