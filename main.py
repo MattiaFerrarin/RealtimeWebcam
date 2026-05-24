@@ -7,7 +7,6 @@ import numpy as np
 import time
 import datetime
 import mediapipe as mp
-from fontTools.misc.cython import returns
 
 from scripts import filters
 from scripts import effects
