@@ -240,7 +240,7 @@ if __name__ == "__main__":
         sys.exit(0)
     ui = UI()
     state = StateHandler(filtersList, effectsList)
-    face_handler = FaceHandler(alpha=0.7)
+    face_handler = FaceHandler(alpha=0.4)
     running = True
 
     try:
@@ -289,7 +289,7 @@ if __name__ == "__main__":
             face = max(faces, key=lambda f: f[2] * f[3], default=None) # Selects the main face
             face = face_handler.smooth(face) # Smooths the main face
 
-            frame = applyEffect(effectName, frame, max(faces, key=lambda f: f[2] * f[3], default=None)) # Applies effect
+            frame = applyEffect(effectName, frame, face) # Applies effect
             frame = applyFilter(filterName, frame) # Applies filter
             if state.flipped: # If flipped, flip the frame
                 frame = cv2.flip(frame, 1)
