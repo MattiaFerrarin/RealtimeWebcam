@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 # Create virtual environment if missing
 if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3.11 -m venv venv
 fi
 
 # Activate virtual environment
@@ -20,4 +20,4 @@ pip install -r requirements.txt
 
 # Run application
 echo "Starting webcam application..."
-python3 main.py
+python3.11 main.py
